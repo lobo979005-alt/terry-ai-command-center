@@ -62,12 +62,19 @@ app.get('/api/agents', (req, res) => {
   })));
 });
 
+// ====== 取得台北今日日期 (yyyy-mm-dd, 不受 server timezone 影響) ======
+function getTaipeiToday() {
+  return new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Taipei' });
+}
+
 // ====== 核心: dispatch with tool use loop ======
 async function dispatchAgent({ agentId, model, messages, depth = 0, triggeredBy = null, workLog = [] }) {
   const agent = AGENTS.find(a => a.id === agentId);
   if (!agent) throw new Error(`agent not found: ${agentId}`);
 
   const tools = getToolsForAgent(agentId);
+  const today = getTaipeiToday();
+  const systemPrompt = `${agent.systemPrompt}\n\n【系統注入】今日日期: ${today} (台北時區)。所有日期相關推理必須以此為準,不可使用模型內部的日期推測。`;
   let workingMessages = [...messages];
   let totalCost = 0;
   let turnCount = 0;
@@ -89,7 +96,7 @@ async function dispatchAgent({ agentId, model, messages, depth = 0, triggeredBy 
     const response = await anthropic.messages.create({
       model,
       max_tokens: 2048,
-      system: agent.systemPrompt,
+      system: systemPrompt,
       messages: workingMessages,
       ...(tools.length > 0 ? { tools } : {}),
     });

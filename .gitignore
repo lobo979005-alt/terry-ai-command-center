@@ -7,3 +7,5 @@ npm-debug.log*
 .vscode/
 .idea/
 dispatch_resp.json
+resp_*.json
+/tmp/
