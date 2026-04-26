@@ -1,0 +1,21 @@
+{
+  "name": "terry-ai-command-center",
+  "version": "1.0.0",
+  "description": "泰瑞 AI 軍團 指揮中心 - 7 個 Claude agent 的像素風統一指揮介面",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.30.0",
+    "cors": "^2.8.5",
+    "express": "^4.21.0"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "author": "lobo",
+  "license": "ISC"
+}

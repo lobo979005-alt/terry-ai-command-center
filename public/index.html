@@ -1,0 +1,1280 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>泰瑞 AI 軍團 指揮中心 | TERRY AI COMMAND CENTER</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&family=Noto+Sans+TC:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+  /* ========== RESET & BASE ========== */
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    width: 100%; height: 100%; overflow: hidden;
+    background: #0a0a0f;
+    font-family: 'Noto Sans TC', 'Courier New', monospace;
+    color: #e8e8e8;
+    image-rendering: pixelated;
+    -webkit-font-smoothing: none;
+  }
+  button, input, textarea { font-family: inherit; }
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-track { background: #1a1a25; }
+  ::-webkit-scrollbar-thumb { background: #4a3f2a; border: 1px solid #6b5538; }
+  ::-webkit-scrollbar-thumb:hover { background: #6b5538; }
+
+  /* ========== APP LAYOUT ========== */
+  .app {
+    display: grid;
+    grid-template-rows: 48px 1fr;
+    height: 100vh;
+    background: #0a0a0f;
+  }
+
+  /* ========== TOP BAR ========== */
+  .topbar {
+    background: linear-gradient(180deg, #1a1a25 0%, #0f0f18 100%);
+    border-bottom: 2px solid #2a2a38;
+    display: flex;
+    align-items: center;
+    padding: 0 16px;
+    gap: 16px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.6);
+  }
+  .topbar-title {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 13px;
+    color: #ffd966;
+    letter-spacing: 1px;
+    text-shadow: 0 0 8px rgba(255, 217, 102, 0.4);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .topbar-title::before {
+    content: "⚔";
+    color: #c0392b;
+    font-size: 18px;
+    text-shadow: 0 0 6px rgba(192, 57, 43, 0.6);
+  }
+  .topbar-subtitle {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 8px;
+    color: #6b8a3a;
+    letter-spacing: 2px;
+  }
+  .topbar-spacer { flex: 1; }
+  .topbar-stats {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+  .stat-chip {
+    background: #1f1f2e;
+    border: 1px solid #3a3a4a;
+    padding: 4px 10px;
+    font-size: 11px;
+    color: #c0c0c0;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    border-radius: 2px;
+  }
+  .stat-chip.online { color: #6b8a3a; border-color: #4a5a2a; }
+  .stat-chip.online::before {
+    content: ""; width: 6px; height: 6px; background: #6b8a3a;
+    border-radius: 50%; box-shadow: 0 0 4px #6b8a3a;
+    animation: blink 2s infinite;
+  }
+  .stat-chip.cost { color: #ffd966; }
+  .stat-chip.tokens { color: #8ab4f8; }
+  .stat-chip-btn {
+    background: #2a2a38; border: 1px solid #3a3a4a;
+    padding: 4px 10px; font-size: 11px; color: #c0c0c0;
+    cursor: pointer; transition: all 0.15s;
+  }
+  .stat-chip-btn:hover { background: #3a3a4a; color: #ffd966; }
+
+  @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+  /* ========== MAIN AREA ========== */
+  .main {
+    display: grid;
+    grid-template-columns: 1fr 380px;
+    overflow: hidden;
+  }
+
+  /* ========== ROOM (PIXEL ART SCENE) ========== */
+  .room {
+    position: relative;
+    overflow: hidden;
+    background:
+      /* tile floor */
+      repeating-linear-gradient(
+        0deg,
+        #3d2817 0px, #3d2817 2px,
+        #4a2f1c 2px, #4a2f1c 38px,
+        #2d1d0f 38px, #2d1d0f 40px
+      ),
+      repeating-linear-gradient(
+        90deg,
+        transparent 0px, transparent 38px,
+        rgba(0,0,0,0.4) 38px, rgba(0,0,0,0.4) 40px
+      ),
+      #2d1d0f;
+    image-rendering: pixelated;
+  }
+  .room-wall {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 35%;
+    background:
+      repeating-linear-gradient(
+        90deg,
+        #3a3a4a 0px, #3a3a4a 38px,
+        #2a2a38 38px, #2a2a38 40px
+      ),
+      repeating-linear-gradient(
+        0deg,
+        #3a3a4a 0px, #3a3a4a 38px,
+        #2a2a38 38px, #2a2a38 40px
+      ),
+      linear-gradient(180deg, #2a2a38 0%, #1f1f2e 100%);
+    border-bottom: 3px solid #15151d;
+    box-shadow: inset 0 -10px 20px rgba(0,0,0,0.5);
+  }
+
+  /* Wall decorations */
+  .wall-deco {
+    position: absolute;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 8px;
+    padding: 4px 8px;
+    image-rendering: pixelated;
+  }
+  .wall-deco.danger {
+    top: 8%; left: 3%;
+    background: #c0392b;
+    color: #fff;
+    border: 2px solid #000;
+    transform: rotate(-3deg);
+    text-shadow: 1px 1px 0 #000;
+  }
+  .wall-deco.sign {
+    top: 6%; left: 50%;
+    transform: translateX(-50%);
+    background: #2a1810;
+    color: #ffd966;
+    padding: 6px 18px;
+    border: 3px solid #6b4f30;
+    border-radius: 2px;
+    font-family: 'Noto Sans TC', monospace;
+    font-size: 13px;
+    font-weight: 900;
+    letter-spacing: 4px;
+    box-shadow: 0 4px 0 #1a0f08, 0 0 12px rgba(255, 217, 102, 0.2);
+  }
+  .wall-deco.power {
+    top: 12%; left: 20%;
+    width: 24px; height: 30px;
+    background: #f1c40f;
+    border: 2px solid #000;
+    color: #000;
+    text-align: center;
+    font-size: 14px;
+    line-height: 26px;
+  }
+  .wall-deco.lamp {
+    top: 0; left: 35%;
+    width: 60px; height: 40px;
+    background: radial-gradient(ellipse at top, #ffd966 0%, #c79e3a 60%, transparent 70%);
+    border-radius: 0 0 30px 30px;
+    box-shadow: 0 8px 30px rgba(255, 217, 102, 0.3);
+  }
+  .wall-deco.lamp::before {
+    content: ""; position: absolute;
+    top: 0; left: 50%; transform: translateX(-50%);
+    width: 4px; height: 12px; background: #2a2a38;
+  }
+  .wall-deco.locker {
+    top: 12%; right: 8%;
+    width: 80px; height: 80px;
+    background:
+      repeating-linear-gradient(90deg,
+        #3a4a5a 0px, #3a4a5a 18px,
+        #2a3a4a 18px, #2a3a4a 20px,
+        #4a5a6a 20px, #4a5a6a 38px,
+        #2a3a4a 38px, #2a3a4a 40px),
+      #3a4a5a;
+    border: 2px solid #1a2a3a;
+    box-shadow: 2px 2px 0 #000;
+  }
+
+  /* ========== AGENTS ========== */
+  .agents-floor {
+    position: absolute;
+    top: 38%; left: 0; right: 0; bottom: 0;
+    padding: 20px;
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    align-items: end;
+    gap: 8px;
+  }
+
+  .agent {
+    position: relative;
+    cursor: pointer;
+    transition: transform 0.2s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    user-select: none;
+  }
+  .agent:hover { transform: translateY(-4px); }
+  .agent.selected .agent-sprite {
+    filter: drop-shadow(0 0 12px #ffd966);
+    animation: bounce 0.6s ease-in-out infinite;
+  }
+  .agent.working .agent-sprite {
+    filter: drop-shadow(0 0 8px #6b8a3a);
+    animation: work 0.4s steps(2) infinite;
+  }
+  .agent.thinking .agent-sprite { animation: think 1s ease-in-out infinite; }
+
+  @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+  @keyframes work { 0% { transform: translateX(-1px); } 100% { transform: translateX(1px); } }
+  @keyframes think { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+
+  /* Pixel sprite using emoji + filter for pixel-look */
+  .agent-sprite {
+    font-size: 56px;
+    line-height: 1;
+    filter:
+      drop-shadow(2px 2px 0 #000)
+      drop-shadow(-1px 0 0 #000);
+    image-rendering: pixelated;
+    margin-bottom: 6px;
+    transform-origin: bottom center;
+  }
+  .agent-shadow {
+    width: 40px; height: 6px;
+    background: rgba(0,0,0,0.6);
+    border-radius: 50%;
+    margin-top: -12px;
+    filter: blur(2px);
+  }
+  .agent-label {
+    background: #1a1a25;
+    border: 2px solid #3a3a4a;
+    padding: 3px 8px;
+    font-size: 11px;
+    color: #e8e8e8;
+    font-weight: 700;
+    margin-top: 4px;
+    box-shadow: 2px 2px 0 #000;
+    white-space: nowrap;
+    text-align: center;
+    min-width: 70px;
+  }
+  .agent-label .role {
+    display: block;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 7px;
+    color: #ffd966;
+    margin-top: 2px;
+    letter-spacing: 1px;
+  }
+  .agent-status {
+    margin-top: 4px;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 7px;
+    padding: 2px 6px;
+    border: 1px solid #3a3a4a;
+    background: #0f0f18;
+    color: #6b6b6b;
+    letter-spacing: 1px;
+  }
+  .agent-status.standby { color: #8ab4f8; border-color: #4a5a8a; }
+  .agent-status.working {
+    color: #6b8a3a; border-color: #4a5a2a;
+    background: linear-gradient(90deg, #1a2a15, #0f0f18);
+  }
+  .agent-status.done { color: #ffd966; border-color: #6b5538; }
+
+  /* Speech bubble for working agents */
+  .agent-bubble {
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: #fff;
+    color: #000;
+    padding: 4px 8px;
+    font-size: 10px;
+    border: 2px solid #000;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+  }
+  .agent-bubble::after {
+    content: "";
+    position: absolute;
+    top: 100%; left: 50%;
+    transform: translateX(-50%);
+    border: 6px solid transparent;
+    border-top-color: #000;
+  }
+  .agent.working .agent-bubble,
+  .agent.thinking .agent-bubble { opacity: 1; }
+
+  /* ========== CHAT PANEL ========== */
+  .panel {
+    background: #0f0f18;
+    border-left: 2px solid #2a2a38;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .panel-header {
+    padding: 12px 16px;
+    background: linear-gradient(180deg, #1a1a25, #0f0f18);
+    border-bottom: 2px solid #2a2a38;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .panel-header-title {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 11px;
+    color: #ffd966;
+    letter-spacing: 1px;
+  }
+  .panel-header-title::before {
+    content: "▣ "; color: #c0392b;
+  }
+  .panel-tabs {
+    display: flex;
+    background: #0a0a0f;
+    border-bottom: 1px solid #2a2a38;
+  }
+  .panel-tab {
+    flex: 1;
+    padding: 10px;
+    background: transparent;
+    border: none;
+    border-right: 1px solid #2a2a38;
+    color: #6b6b6b;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .panel-tab:last-child { border-right: none; }
+  .panel-tab.active {
+    color: #ffd966;
+    background: #1a1a25;
+    border-bottom: 2px solid #ffd966;
+    margin-bottom: -1px;
+  }
+  .panel-tab:hover:not(.active) { color: #c0c0c0; background: #15151d; }
+
+  /* Agent grid in chat panel */
+  .agent-grid {
+    padding: 12px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    background: #0f0f18;
+    border-bottom: 1px solid #2a2a38;
+  }
+  .agent-pill {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    background: #1a1a25;
+    border: 1px solid #3a3a4a;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-size: 12px;
+    color: #c0c0c0;
+  }
+  .agent-pill:hover { border-color: #6b5538; background: #1f1f2e; }
+  .agent-pill.selected {
+    border-color: #ffd966;
+    background: linear-gradient(90deg, #2a2210, #1a1a25);
+    color: #ffd966;
+    box-shadow: 0 0 8px rgba(255, 217, 102, 0.3);
+  }
+  .agent-pill-emoji { font-size: 16px; }
+  .agent-pill-name { flex: 1; font-weight: 700; }
+  .agent-pill-status {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 6px;
+    padding: 2px 4px;
+    border: 1px solid currentColor;
+    color: #6b8a3a;
+    letter-spacing: 1px;
+  }
+  .agent-pill.busy .agent-pill-status { color: #c0392b; }
+
+  /* Messages */
+  .messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .message {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    animation: msg-in 0.3s ease-out;
+  }
+  @keyframes msg-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  .message-meta {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 7px;
+    color: #6b6b6b;
+    letter-spacing: 1px;
+  }
+  .message-author { color: #ffd966; }
+  .message.user .message-author { color: #8ab4f8; }
+  .message-body {
+    background: #1a1a25;
+    border: 1px solid #2a2a38;
+    border-left: 3px solid #ffd966;
+    padding: 10px 12px;
+    font-size: 13px;
+    line-height: 1.6;
+    color: #e8e8e8;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .message.user .message-body {
+    border-left-color: #8ab4f8;
+    background: #15202a;
+  }
+  .message.system .message-body {
+    border-left-color: #6b8a3a;
+    background: #15201a;
+    color: #a0c070;
+    font-size: 12px;
+  }
+  .message.error .message-body {
+    border-left-color: #c0392b;
+    background: #2a1515;
+    color: #e8a0a0;
+  }
+
+  /* WorkLog (顯示 agent 工作過程) */
+  .worklog {
+    background: #0a0e1a;
+    border: 1px solid #2a3a4a;
+    margin-top: 8px;
+    font-family: 'Courier New', monospace;
+    font-size: 11px;
+    overflow: hidden;
+  }
+  .worklog-header {
+    background: #15202a;
+    padding: 6px 10px;
+    color: #6b8a3a;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 8px;
+    letter-spacing: 1px;
+    cursor: pointer;
+    user-select: none;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .worklog-header::before {
+    content: "▶";
+    font-family: monospace;
+    transition: transform 0.2s;
+  }
+  .worklog.expanded .worklog-header::before { transform: rotate(90deg); }
+  .worklog-body {
+    display: none;
+    padding: 8px 10px;
+    color: #c0c0c0;
+    line-height: 1.6;
+    max-height: 280px;
+    overflow-y: auto;
+  }
+  .worklog.expanded .worklog-body { display: block; }
+  .worklog-line {
+    padding: 2px 0;
+    white-space: pre-wrap;
+    word-break: break-all;
+  }
+  .worklog-line.depth-1 { padding-left: 14px; border-left: 2px solid #2a3a4a; margin-left: 4px; }
+  .worklog-line.depth-2 { padding-left: 28px; border-left: 2px solid #2a3a4a; margin-left: 4px; }
+  .worklog-line .wl-tag {
+    display: inline-block;
+    padding: 0 6px;
+    font-size: 9px;
+    font-family: 'Press Start 2P', monospace;
+    border: 1px solid currentColor;
+    margin-right: 6px;
+    letter-spacing: 1px;
+  }
+  .worklog-line.start { color: #ffd966; }
+  .worklog-line.start .wl-tag { color: #ffd966; }
+  .worklog-line.tool { color: #8ab4f8; }
+  .worklog-line.tool .wl-tag { color: #8ab4f8; }
+  .worklog-line.result { color: #6b8a3a; }
+  .worklog-line.result .wl-tag { color: #6b8a3a; }
+  .worklog-line.error { color: #c0392b; }
+  .worklog-line.error .wl-tag { color: #c0392b; }
+  .worklog-line.reply { color: #ffd966; }
+
+  /* Loading dots */
+  .loading {
+    display: inline-block;
+  }
+  .loading::after {
+    content: "";
+    animation: dots 1.4s steps(4) infinite;
+  }
+  @keyframes dots {
+    0% { content: ""; }
+    25% { content: "."; }
+    50% { content: ".."; }
+    75% { content: "..."; }
+  }
+
+  /* Input area */
+  .composer {
+    border-top: 2px solid #2a2a38;
+    background: #0a0a0f;
+    padding: 10px 12px;
+  }
+  .composer-target {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 8px;
+    color: #6b6b6b;
+    margin-bottom: 6px;
+    letter-spacing: 1px;
+  }
+  .composer-target span { color: #ffd966; }
+  .composer-input {
+    width: 100%;
+    background: #1a1a25;
+    border: 1px solid #3a3a4a;
+    color: #e8e8e8;
+    padding: 10px;
+    font-size: 13px;
+    resize: none;
+    font-family: inherit;
+    min-height: 60px;
+    transition: border 0.15s;
+  }
+  .composer-input:focus {
+    outline: none;
+    border-color: #ffd966;
+    box-shadow: 0 0 8px rgba(255, 217, 102, 0.2);
+  }
+  .composer-bar {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+    align-items: center;
+  }
+  .composer-model {
+    flex: 1;
+    background: #1a1a25;
+    border: 1px solid #3a3a4a;
+    color: #c0c0c0;
+    padding: 6px 8px;
+    font-size: 11px;
+    font-family: 'Press Start 2P', monospace;
+    letter-spacing: 1px;
+  }
+  .composer-send {
+    background: linear-gradient(180deg, #c0392b, #8b1a1a);
+    border: 2px solid #6b1010;
+    color: #fff;
+    padding: 8px 18px;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 10px;
+    cursor: pointer;
+    letter-spacing: 2px;
+    box-shadow: 0 3px 0 #4a0808, 0 0 10px rgba(192, 57, 43, 0.3);
+    transition: all 0.1s;
+  }
+  .composer-send:hover { background: linear-gradient(180deg, #d04030, #a02020); }
+  .composer-send:active { transform: translateY(2px); box-shadow: 0 1px 0 #4a0808; }
+  .composer-send:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    background: #555;
+    border-color: #333;
+    box-shadow: none;
+  }
+  .composer-hint {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 6px;
+    color: #4a4a5a;
+    margin-top: 6px;
+    letter-spacing: 1px;
+  }
+
+  /* ========== EDIT MODE / KEY BUTTON ========== */
+  .top-action {
+    background: #2a2a38;
+    border: 1px solid #4a4a5a;
+    color: #c0c0c0;
+    padding: 4px 10px;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 8px;
+    cursor: pointer;
+    letter-spacing: 1px;
+  }
+  .top-action.danger { background: #6b2020; border-color: #8b1a1a; color: #fff; }
+  .top-action:hover { background: #3a3a4a; }
+
+  /* ========== MOBILE ========== */
+  @media (max-width: 768px) {
+    .main { grid-template-columns: 1fr; grid-template-rows: 40% 60%; }
+    .topbar { padding: 0 8px; gap: 8px; flex-wrap: wrap; height: auto; }
+    .topbar { padding: 6px; }
+    .app { grid-template-rows: auto 1fr; }
+    .topbar-title { font-size: 10px; }
+    .topbar-stats { flex-wrap: wrap; gap: 4px; }
+    .agent-sprite { font-size: 36px; }
+    .agent-label { font-size: 9px; min-width: 50px; padding: 2px 4px; }
+    .agent-label .role { font-size: 6px; }
+    .agents-floor { padding: 8px; gap: 4px; top: 35%; }
+    .wall-deco.sign { font-size: 10px; padding: 3px 8px; letter-spacing: 2px; }
+  }
+
+  /* ========== KEY MODAL ========== */
+  .modal-bg {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.8);
+    display: none;
+    align-items: center; justify-content: center;
+    z-index: 100;
+  }
+  .modal-bg.show { display: flex; }
+  .modal {
+    background: #1a1a25;
+    border: 2px solid #ffd966;
+    box-shadow: 0 0 30px rgba(255, 217, 102, 0.3);
+    padding: 24px;
+    width: 90%;
+    max-width: 480px;
+  }
+  .modal h3 {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 12px;
+    color: #ffd966;
+    margin-bottom: 16px;
+    letter-spacing: 1px;
+  }
+  .modal p { font-size: 13px; color: #c0c0c0; margin-bottom: 12px; line-height: 1.6; }
+  .modal input {
+    width: 100%;
+    background: #0f0f18;
+    border: 1px solid #3a3a4a;
+    color: #e8e8e8;
+    padding: 10px;
+    font-size: 13px;
+    margin-bottom: 12px;
+    font-family: monospace;
+  }
+  .modal input:focus { outline: none; border-color: #ffd966; }
+  .modal-actions { display: flex; gap: 8px; justify-content: flex-end; }
+  .modal-btn {
+    background: #2a2a38; border: 1px solid #3a3a4a; color: #c0c0c0;
+    padding: 8px 16px; font-size: 11px; cursor: pointer;
+    font-family: 'Press Start 2P', monospace; letter-spacing: 1px;
+  }
+  .modal-btn.primary { background: #6b5538; color: #ffd966; border-color: #ffd966; }
+  .modal-note {
+    font-size: 11px; color: #6b8a3a; margin-top: 8px;
+    padding: 8px; border: 1px dashed #4a5a2a; background: #15201a;
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <!-- ============ TOP BAR ============ -->
+  <div class="topbar">
+    <div class="topbar-title">
+      泰瑞 AI 軍團 指揮中心
+      <span class="topbar-subtitle">TERRY&nbsp;AI&nbsp;COMMAND&nbsp;CENTER</span>
+    </div>
+    <div class="topbar-spacer"></div>
+    <div class="topbar-stats">
+      <div class="stat-chip tokens">📋 <span id="memCount">0</span> 筆記憶</div>
+      <div class="stat-chip cost">💰 $<span id="costUsd">0.00</span> · NT$<span id="costTwd">0</span></div>
+      <div class="stat-chip online">已連線</div>
+      <button class="top-action" onclick="toggleEdit()">⚙ 編輯模式</button>
+      <button class="top-action danger" onclick="openKeyModal()">🔑 換 KEY</button>
+    </div>
+  </div>
+
+  <!-- ============ MAIN ============ -->
+  <div class="main">
+
+    <!-- ============ ROOM ============ -->
+    <div class="room" id="room">
+      <div class="room-wall">
+        <div class="wall-deco danger">DANGER</div>
+        <div class="wall-deco lamp"></div>
+        <div class="wall-deco sign">嶼蒙蓁</div>
+        <div class="wall-deco power">⚡</div>
+        <div class="wall-deco locker"></div>
+      </div>
+
+      <div class="agents-floor" id="agentsFloor">
+        <!-- agents injected by JS -->
+      </div>
+    </div>
+
+    <!-- ============ CHAT PANEL ============ -->
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-header-title">聊天版 · 派任務</div>
+      </div>
+
+      <div class="agent-grid" id="agentGrid">
+        <!-- agent pills injected by JS -->
+      </div>
+
+      <div class="messages" id="messages">
+        <div class="message system">
+          <div class="message-meta"><span class="message-author">SYSTEM</span><span>·</span><span id="bootTime"></span></div>
+          <div class="message-body">指揮中心已啟動 · v2.0 (Tool Use 版)。
+
+7 個 Agent 各有專屬工具能執行任務,參謀總長能調度其他下屬。
+試試問參謀總長:「整理今天戰況」、「3 月損益多少」、「聯電有什麼新聞」</div>
+        </div>
+      </div>
+
+      <div class="composer">
+        <div class="composer-target">▶ 目標 AGENT: <span id="composerTarget">未選擇</span></div>
+        <textarea class="composer-input" id="composerInput" placeholder="下達任務給選中的 Agent (Enter 送出 / Shift+Enter 換行)"></textarea>
+        <div class="composer-bar">
+          <select class="composer-model" id="modelSelect">
+            <option value="claude-opus-4-7">OPUS 4.7</option>
+            <option value="claude-sonnet-4-6" selected>SONNET 4.6</option>
+            <option value="claude-haiku-4-5">HAIKU 4.5</option>
+          </select>
+          <button class="composer-send" id="sendBtn" onclick="sendTask()">送出</button>
+        </div>
+        <div class="composer-hint">⏎ ENTER 送出 · ⇧ SHIFT+ENTER 換行</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ============ KEY MODAL ============ -->
+<div class="modal-bg" id="keyModal">
+  <div class="modal">
+    <h3>🔑 設定 ANTHROPIC API KEY</h3>
+    <p>輸入 Claude API key。Key 只儲存在本機 localStorage,不會上傳。</p>
+    <input type="password" id="apiKeyInput" placeholder="sk-ant-..." />
+    <div class="modal-note">
+      💡 沒有後端時 → 直接呼叫 Anthropic API(需 CORS,可能要用 proxy)<br>
+      💡 有自架 server.js → 留空,後端會用環境變數的 KEY
+    </div>
+    <div class="modal-actions">
+      <button class="modal-btn" onclick="closeKeyModal()">取消</button>
+      <button class="modal-btn primary" onclick="saveKey()">儲存</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+//  AGENT DEFINITIONS - 7 個 AI 軍團成員
+// ============================================================
+const AGENTS = [
+  {
+    id: 'scout',
+    name: '偵察兵',
+    role: 'SCOUT',
+    emoji: '🥷',
+    systemPrompt: `你是「偵察兵」,老闆 AI 軍團的大單偵測專家。專責 big-order-scanner 系統相關工作:
+- 大單偵測規則(>NT$5M 單筆 / >NT$15M 5分鐘累計)
+- Fugle Pro WebSocket 連線除錯
+- Telegram 推播訊號設計
+回應風格:精準、條列、用戰術語言。所有金額用 NT$ 標示。`,
+  },
+  {
+    id: 'intel',
+    name: '情報官',
+    role: 'INTEL',
+    emoji: '🕵',
+    systemPrompt: `你是「情報官」,負責個股新聞與情資搜集。對應 monitor.js 工作流:
+- 個股新聞抓取與過濾(13:30 後同日新聞)
+- MOPS 重訊掃描
+- 法說會、除權息提醒
+回應風格:像情報簡報,標題 + 時間 + 來源 + 一句重點。`,
+  },
+  {
+    id: 'tactician',
+    name: '戰術官',
+    role: 'TACTICS',
+    emoji: '⚔',
+    systemPrompt: `你是「戰術官」,部位風險與戰況分析專家。對應蘿蔔戰情室:
+- Taiwan 部位 ↔ US ADR 對映分析
+- UMC ADR 背離追蹤
+- 三檔死守法 / 五秒驟變法 / 10AM 汰弱法則執行建議
+回應風格:果斷、提供明確建議(進/出/觀望),附風險提示。`,
+  },
+  {
+    id: 'quartermaster',
+    name: '軍需官',
+    role: 'CFO',
+    emoji: '💼',
+    systemPrompt: `你是「軍需官」,負責 P&L 統計與帳務。對應 daikon-dashboard:
+- 兆豐/群益/元富(股票) + 統一/期貨帳(期貨)分類
+- 月度/累計損益計算(只用老闆提供原始數字,絕不自行推算)
+- 報表格式:傳統中文、表格化
+回應風格:會計師調性,數字精準,單位 NT$。`,
+  },
+  {
+    id: 'comms',
+    name: '通訊官',
+    role: 'COMMS',
+    emoji: '📡',
+    systemPrompt: `你是「通訊官」,Telegram bot 與通知系統管理員。對應:
+- @LOBOMoney_bot / @lobo_ai_assistant_bot / @DangChong_Shenqi_Bot
+- Node.js ESM + Groq llama-3.3-70b
+- 推播訊息格式設計
+回應風格:技術導向,提供可執行的程式碼片段。`,
+  },
+  {
+    id: 'engineer',
+    name: '工程師',
+    role: 'CODER',
+    emoji: '👨‍💻',
+    systemPrompt: `你是「工程師」,程式碼與部署工程師。Stack:
+- Node.js / Python / HTML 全端
+- Railway (Hobby $5/mo, project clever-abundance) + Zeabur (free tier)
+- GitHub: lobo979005-alt
+- Windows 桌機路徑: C:\\Users\\terry\\
+規則:輕量工具 → Zeabur;持久 Volume / 24hr Python → Railway。
+回應風格:給可直接複製貼上的程式碼,搭配檔案路徑與部署指令。`,
+  },
+  {
+    id: 'chief',
+    name: '參謀總長',
+    role: 'CHIEF',
+    emoji: '🎖',
+    systemPrompt: `你是「參謀總長」,AI 軍團的最高指揮官,負責任務調度與整體戰略。
+- 接到模糊或跨領域任務時,拆解並分派給其他 6 個 agent
+- 提供整體戰略建議
+- 與老闆討論長期規劃
+回應風格:沉穩、宏觀、會主動建議「這個任務適合派給 XXX 處理」。`,
+  },
+];
+
+const STATE = {
+  selectedAgentId: null,
+  apiKey: localStorage.getItem('anthropic_key') || '',
+  endpoint: localStorage.getItem('endpoint') || '/api/dispatch',  // backend route
+  busy: new Set(),
+  conversations: {}, // agentId -> [{role, content}]
+  totalCost: 0,
+  memCount: 0,
+};
+
+// ============================================================
+//  RENDER ROOM AGENTS
+// ============================================================
+function renderAgents() {
+  const floor = document.getElementById('agentsFloor');
+  floor.innerHTML = '';
+  AGENTS.forEach(a => {
+    const el = document.createElement('div');
+    el.className = 'agent';
+    el.dataset.agentId = a.id;
+    el.innerHTML = `
+      <div class="agent-bubble">工作中...</div>
+      <div class="agent-sprite">${a.emoji}</div>
+      <div class="agent-shadow"></div>
+      <div class="agent-label">${a.name}<span class="role">${a.role}</span></div>
+      <div class="agent-status standby">待命中</div>
+    `;
+    el.onclick = () => selectAgent(a.id);
+    floor.appendChild(el);
+  });
+}
+
+function renderAgentPills() {
+  const grid = document.getElementById('agentGrid');
+  grid.innerHTML = '';
+  AGENTS.forEach(a => {
+    const el = document.createElement('div');
+    el.className = 'agent-pill';
+    el.dataset.agentId = a.id;
+    el.innerHTML = `
+      <span class="agent-pill-emoji">${a.emoji}</span>
+      <span class="agent-pill-name">${a.name} · ${a.role}</span>
+      <span class="agent-pill-status">待命</span>
+    `;
+    el.onclick = () => selectAgent(a.id);
+    grid.appendChild(el);
+  });
+}
+
+// ============================================================
+//  AGENT SELECTION
+// ============================================================
+function selectAgent(id) {
+  STATE.selectedAgentId = id;
+  document.querySelectorAll('.agent').forEach(el => {
+    el.classList.toggle('selected', el.dataset.agentId === id);
+  });
+  document.querySelectorAll('.agent-pill').forEach(el => {
+    el.classList.toggle('selected', el.dataset.agentId === id);
+  });
+  const a = AGENTS.find(x => x.id === id);
+  document.getElementById('composerTarget').textContent = a ? `${a.emoji} ${a.name} (${a.role})` : '未選擇';
+}
+
+// ============================================================
+//  STATUS UPDATES
+// ============================================================
+function setAgentStatus(id, status) {
+  // status: 'standby' | 'working' | 'done'
+  const labels = { standby: '待命中', working: '工作中', done: '已完成' };
+  const el = document.querySelector(`.agent[data-agent-id="${id}"]`);
+  if (el) {
+    el.classList.toggle('working', status === 'working');
+    const s = el.querySelector('.agent-status');
+    s.className = 'agent-status ' + status;
+    s.textContent = labels[status];
+  }
+  const pill = document.querySelector(`.agent-pill[data-agent-id="${id}"]`);
+  if (pill) {
+    pill.classList.toggle('busy', status === 'working');
+    pill.querySelector('.agent-pill-status').textContent = status === 'working' ? '工作' : '待命';
+  }
+}
+
+// ============================================================
+//  MESSAGE HANDLING
+// ============================================================
+function addMessage(type, author, body, isLoading=false) {
+  const messages = document.getElementById('messages');
+  const time = new Date().toLocaleTimeString('zh-TW', { hour12: false });
+  const el = document.createElement('div');
+  el.className = `message ${type}`;
+  el.innerHTML = `
+    <div class="message-meta">
+      <span class="message-author">${author}</span>
+      <span>·</span>
+      <span>${time}</span>
+    </div>
+    <div class="message-body">${isLoading ? '<span class="loading">思考中</span>' : escapeHtml(body)}</div>
+  `;
+  messages.appendChild(el);
+  messages.scrollTop = messages.scrollHeight;
+  return el;
+}
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  }[c]));
+}
+
+// ============================================================
+//  SEND TASK TO AGENT
+// ============================================================
+async function sendTask() {
+  if (!STATE.selectedAgentId) {
+    addMessage('error', 'SYSTEM', '請先選擇一名 Agent');
+    return;
+  }
+  const input = document.getElementById('composerInput');
+  const text = input.value.trim();
+  if (!text) return;
+  if (STATE.busy.has(STATE.selectedAgentId)) {
+    addMessage('error', 'SYSTEM', '該 Agent 正在處理任務,請稍候');
+    return;
+  }
+
+  const agent = AGENTS.find(a => a.id === STATE.selectedAgentId);
+  input.value = '';
+
+  // Add user message
+  addMessage('user', `老闆 → ${agent.name}`, text);
+
+  // Mark busy
+  STATE.busy.add(agent.id);
+  setAgentStatus(agent.id, 'working');
+  const loadingEl = addMessage('assistant', `${agent.emoji} ${agent.name}`, '', true);
+
+  // Push to conversation history
+  if (!STATE.conversations[agent.id]) STATE.conversations[agent.id] = [];
+  STATE.conversations[agent.id].push({ role: 'user', content: text });
+
+  const model = document.getElementById('modelSelect').value;
+  const sendBtn = document.getElementById('sendBtn');
+  sendBtn.disabled = true;
+
+  try {
+    const result = await callAgent(agent, model, STATE.conversations[agent.id]);
+    STATE.conversations[agent.id].push({ role: 'assistant', content: result.reply });
+
+    // Replace loading with real reply + worklog
+    const bodyEl = loadingEl.querySelector('.message-body');
+    bodyEl.innerHTML = '';
+    bodyEl.appendChild(document.createTextNode(result.reply));
+
+    // Render worklog if present
+    if (result.workLog && result.workLog.length > 0) {
+      const wl = renderWorkLog(result.workLog);
+      bodyEl.appendChild(wl);
+    }
+
+    // Reset all sub-agents that were dispatched to
+    if (result.workLog) {
+      const agentsInvolved = new Set();
+      result.workLog.forEach(l => {
+        if (l.agent) agentsInvolved.add(l.agent);
+      });
+      agentsInvolved.forEach(aid => {
+        if (aid !== agent.id) setAgentStatus(aid, 'standby');
+      });
+    }
+
+    setAgentStatus(agent.id, 'done');
+    setTimeout(() => setAgentStatus(agent.id, 'standby'), 3000);
+
+    // Update memory count + cost
+    STATE.memCount++;
+    document.getElementById('memCount').textContent = STATE.memCount;
+    if (result.cost) {
+      STATE.totalCost += result.cost;
+      document.getElementById('costUsd').textContent = STATE.totalCost.toFixed(4);
+      document.getElementById('costTwd').textContent = (STATE.totalCost * 32).toFixed(2);
+    }
+  } catch (err) {
+    loadingEl.classList.remove('assistant');
+    loadingEl.classList.add('error');
+    loadingEl.querySelector('.message-body').textContent = '⚠ ' + (err.message || err);
+    setAgentStatus(agent.id, 'standby');
+  } finally {
+    STATE.busy.delete(agent.id);
+    sendBtn.disabled = false;
+  }
+}
+
+// ============================================================
+//  CALL AGENT - tries backend first, falls back to direct API
+// ============================================================
+async function callAgent(agent, model, history) {
+  // Strategy 1: backend dispatch (recommended)
+  try {
+    const res = await fetch(STATE.endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        agentId: agent.id,
+        model,
+        messages: history,
+      }),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      // Animate sub-agents based on workLog as it streams (we don't stream yet, but we mark them after)
+      if (data.workLog) {
+        data.workLog.forEach(l => {
+          if (l.type === 'agent_start' && l.agent !== agent.id) {
+            setAgentStatus(l.agent, 'working');
+          }
+        });
+      }
+      return {
+        reply: data.reply,
+        workLog: data.workLog,
+        cost: data.cost,
+      };
+    }
+    // fall through to direct API
+  } catch (e) {
+    // backend not available - try direct
+  }
+
+  // Strategy 2: direct call to Anthropic API (no tool use in browser - tools require backend)
+  if (!STATE.apiKey) {
+    return { reply: await mockReply(agent, history), workLog: [], cost: 0 };
+  }
+
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': STATE.apiKey,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true',
+    },
+    body: JSON.stringify({
+      model,
+      max_tokens: 2048,
+      system: agent.systemPrompt + '\n\n[NOTE: 目前是直連模式,無法使用工具。要使用工具請部署後端 server.js]',
+      messages: history,
+    }),
+  });
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(`API ${res.status}: ${err.slice(0, 200)}`);
+  }
+  const data = await res.json();
+  return { reply: data.content[0].text, workLog: [], cost: 0 };
+}
+
+// ============================================================
+//  RENDER WORK LOG
+// ============================================================
+function renderWorkLog(log) {
+  const wl = document.createElement('div');
+  wl.className = 'worklog';
+
+  const toolCalls = log.filter(l => l.type === 'tool_call').length;
+  const subAgents = log.filter(l => l.type === 'agent_start' && l.depth > 0).length;
+  const totalTurns = log.filter(l => l.type === 'turn').length;
+
+  const summary = [];
+  if (totalTurns > 1) summary.push(`${totalTurns} 回合`);
+  if (toolCalls > 0) summary.push(`${toolCalls} 個工具`);
+  if (subAgents > 0) summary.push(`調度 ${subAgents} 個下屬`);
+  const summaryText = summary.length ? summary.join(' · ') : '直接回覆';
+
+  wl.innerHTML = `<div class="worklog-header">工作日誌 · ${summaryText}</div><div class="worklog-body"></div>`;
+  const body = wl.querySelector('.worklog-body');
+
+  log.forEach(entry => {
+    const line = document.createElement('div');
+    const depthClass = entry.depth > 0 ? `depth-${Math.min(entry.depth, 2)}` : '';
+    line.className = `worklog-line ${depthClass}`;
+
+    switch (entry.type) {
+      case 'agent_start':
+        line.classList.add('start');
+        line.innerHTML = `<span class="wl-tag">START</span>${entry.emoji} ${entry.name}${entry.triggeredBy ? ` (← ${entry.triggeredBy})` : ''}`;
+        break;
+      case 'tool_call':
+        line.classList.add('tool');
+        line.innerHTML = `<span class="wl-tag">TOOL</span><strong>${escapeHtml(entry.tool)}</strong>(${escapeHtml(JSON.stringify(entry.input).slice(0, 80))})`;
+        break;
+      case 'tool_result':
+        line.classList.add('result');
+        line.innerHTML = `<span class="wl-tag">RESULT</span>${escapeHtml(entry.result_preview || '(no preview)')}`;
+        break;
+      case 'tool_error':
+        line.classList.add('error');
+        line.innerHTML = `<span class="wl-tag">ERROR</span>${escapeHtml(entry.error)}`;
+        break;
+      case 'agent_reply':
+        line.classList.add('reply');
+        line.innerHTML = `<span class="wl-tag">REPLY</span>${escapeHtml(entry.reply)}`;
+        break;
+      case 'turn':
+        // 跳過,太冗長
+        return;
+      default:
+        line.textContent = `[${entry.type}] ${JSON.stringify(entry).slice(0, 100)}`;
+    }
+    body.appendChild(line);
+  });
+
+  // Make header toggleable
+  wl.querySelector('.worklog-header').onclick = () => {
+    wl.classList.toggle('expanded');
+  };
+
+  // Auto-expand if there's interesting content
+  if (toolCalls > 0 || subAgents > 0) wl.classList.add('expanded');
+
+  return wl;
+}
+
+// ============================================================
+//  MOCK REPLY - when no backend & no key, show demo response
+// ============================================================
+function mockReply(agent, history) {
+  const lastMsg = history[history.length - 1].content;
+  return new Promise(r => setTimeout(() => {
+    r(`【DEMO 模式】${agent.name}已收到任務:「${lastMsg.slice(0, 30)}${lastMsg.length > 30 ? '...' : ''}」
+
+📌 目前未連線後端,顯示範例回應。
+
+⚙ 啟用真實能力 (含 Tool Use):
+1. 部署 server.js 到 Railway → 設定 ANTHROPIC_API_KEY
+2. 開啟 Railway 部署的網址,即享有完整功能:
+   ✓ 7 個 agent 真實對話
+   ✓ Tool Use (查 P&L、查大單、推 Telegram 等)
+   ✓ 參謀總長可調度其他 6 個下屬
+
+💡 純瀏覽器模式 (本機開檔):
+- 點右上「🔑 換 KEY」輸入 Anthropic API key
+- 注意:此模式無法用工具,只能純對話`);
+  }, 800));
+}
+
+// ============================================================
+//  KEY MODAL
+// ============================================================
+function openKeyModal() {
+  document.getElementById('apiKeyInput').value = STATE.apiKey;
+  document.getElementById('keyModal').classList.add('show');
+}
+function closeKeyModal() {
+  document.getElementById('keyModal').classList.remove('show');
+}
+function saveKey() {
+  const k = document.getElementById('apiKeyInput').value.trim();
+  STATE.apiKey = k;
+  localStorage.setItem('anthropic_key', k);
+  closeKeyModal();
+  addMessage('system', 'SYSTEM', k ? '✓ API key 已儲存到本機' : '✓ API key 已清除');
+}
+function toggleEdit() {
+  alert('編輯模式: 此版本未實作。可在程式碼中直接修改 AGENTS 陣列來調整 system prompt。');
+}
+
+// ============================================================
+//  KEYBOARD SHORTCUTS
+// ============================================================
+document.addEventListener('keydown', e => {
+  const input = document.getElementById('composerInput');
+  if (document.activeElement === input) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendTask();
+    }
+  }
+});
+
+// ============================================================
+//  BOOT
+// ============================================================
+function boot() {
+  renderAgents();
+  renderAgentPills();
+  selectAgent('chief'); // default to 參謀總長
+  document.getElementById('bootTime').textContent = new Date().toLocaleTimeString('zh-TW', { hour12: false });
+  document.getElementById('composerInput').focus();
+}
+boot();
+</script>
+</body>
+</html>
